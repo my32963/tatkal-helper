@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101a32">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Tatkal Helper 2.0</title>
+<style>
+:root{color-scheme:light;--bg:#f3f6fb;--surface:#fff;--ink:#15213b;--muted:#5c6880;--line:#dbe2ee;--navy:#14213d;--amber:#f4b323;--green:#19764b;--red:#a63838;--shadow:0 8px 24px #18294a0d}
+:root[data-theme=dark]{color-scheme:dark;--bg:#0d1424;--surface:#17213a;--ink:#eef2fa;--muted:#aab5ca;--line:#2b3855;--navy:#0a1020;--amber:#f4bd42;--green:#60c58e;--red:#ff8585;--shadow:none}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:760px;margin:auto;padding:18px}.hero{background:var(--navy);color:#fff;border-radius:14px;padding:22px;border-bottom:6px solid var(--amber);box-shadow:var(--shadow)}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px}.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#c6d0e5;font-weight:700}
+h1{font-size:clamp(25px,5vw,36px);line-height:1.1;margin:8px 0}.hero p{color:#cbd4e6;margin:6px 0}.clock{font-size:clamp(48px,12vw,76px);font-weight:800;letter-spacing:.02em;line-height:1.15;font-variant-numeric:tabular-nums;margin:16px 0 8px}
+.segment{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.segment button,.btn{border:1px solid var(--line);border-radius:8px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer;background:var(--surface);color:var(--ink)}
+.segment button{background:transparent;color:#fff;border-color:#596783}.segment button[aria-pressed=true]{background:var(--amber);border-color:var(--amber);color:#17213a}
+section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:14px;box-shadow:var(--shadow)}
+h2{font-size:20px;margin:0 0 12px}.muted,.note{color:var(--muted);font-size:14px}.note{margin:12px 0 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:5px;margin:10px 0}.field label{font-weight:650;font-size:14px}
+input[type=text],input[type=date],textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:94px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btn.primary{background:var(--navy);color:white;border-color:var(--navy)}.btn.warn{border-color:var(--red);color:var(--red)}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.status{min-height:22px}.progress{height:9px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0}.progress>span{display:block;height:100%;width:0;background:var(--green);transition:width .2s}
+.check{display:flex;gap:11px;padding:11px 0;border-top:1px solid var(--line);align-items:flex-start}.check:first-of-type{border-top:0}.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--green);flex:none}.check b{display:block}.check small{display:block;color:var(--muted);font-size:13px}.check input:checked+span b{text-decoration:line-through;color:var(--muted)}
+.pill{display:inline-block;border:1px solid #596783;border-radius:99px;padding:3px 9px;font-size:12px;color:#d9e1ef}
+footer{padding:18px 4px 8px;color:var(--muted);font-size:13px;text-align:center}
+@media(max-width:520px){main{padding:12px}.grid{grid-template-columns:1fr}.hero{padding:18px}section{padding:15px}}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+ <div class="topline"><span class="eyebrow">Booking-day companion · India Standard Time</span><span class="pill">Version 2.0</span></div>
+ <h1>Tatkal Helper</h1><p id="subtitle">Time remaining until the next selected Tatkal opening</p>
+ <div class="clock" id="clock" role="timer" aria-live="off">--:--:--</div>
+ <p id="when">Calculating next opening…</p>
+ <div class="segment" role="group" aria-label="Tatkal class">
+  <button type="button" id="ac" aria-pressed="true">AC · 10:00 AM</button>
+  <button type="button" id="nonac" aria-pressed="false">Non-AC · 11:00 AM</button>
+ </div>
+</header>
+
+<section>
+ <h2>Journey planner</h2>
+ <div class="grid">
+  <div class="field"><label for="journey">Journey date</label><input type="date" id="journey"></div>
+  <div class="field"><label for="train">Main train (number and name)</label><input type="text" id="train" placeholder="e.g. 12345 – Train name"></div>
+ </div>
+ <div class="field"><label for="backup">Backup train or class</label><input type="text" id="backup" placeholder="Your alternative"></div>
+ <p class="note" id="bookingDate">Choose a journey date to see the suggested booking date. Confirm the applicable date and rules on IRCTC.</p>
+</section>
+
+<section>
+ <h2>Alerts</h2>
+ <p class="muted">Enable alerts while this page is open. Browser, device power-saving settings and notification permissions can affect delivery.</p>
+ <div class="actions">
+  <button class="btn primary" id="alertBtn" aria-pressed="false">Turn alerts on</button>
+  <button class="btn" id="testBtn">Test sound</button>
+  <button class="btn" id="installBtn" hidden>Install app</button>
+  <a class="btn" href="https://www.irctc.co.in/nget/train-search" target="_blank" rel="noopener noreferrer">Open IRCTC</a>
+ </div>
+ <p class="note status" id="alertStatus" aria-live="polite"></p>
+</section>
+
+<section>
+ <h2>Booking readiness</h2>
+ <p class="muted" id="progressText">0 of 7 completed</p><div class="progress" aria-label="Checklist progress"><span id="progressBar"></span></div>
+ <div id="checklist"></div>
+</section>
+
+<section>
+ <h2>Passenger preparation notes</h2>
+ <div class="field"><label for="passengers">Passenger details / reminders</label><textarea id="passengers" placeholder="Add only what you need for your own preparation. Avoid saving sensitive identity or payment information."></textarea></div>
+ <div class="actions"><button class="btn" id="copyBtn">Copy notes</button><button class="btn" id="exportBtn">Export plan</button><button class="btn warn" id="clearBtn">Clear saved data</button></div>
+ <p class="note">Your plan and checklist are saved in this browser's local storage. Anyone with access to this browser profile may be able to view them. Do not save passwords, OTPs, full Aadhaar numbers, card details or other sensitive information.</p>
+ <p class="note status" id="saveStatus" aria-live="polite">Changes save automatically on this device.</p>
+</section>
+
+<section>
+ <h2>Important reminders</h2>
+ <ul class="muted">
+  <li>This is a preparation tool only. It does not log in to IRCTC or make a booking.</li>
+  <li>Use the official IRCTC website/app to confirm current Tatkal rules, eligibility, opening dates and timings.</li>
+  <li>Keep your registered phone available if IRCTC requests an OTP. Never share an OTP.</li>
+  <li>Keep passenger and payment information secure. This page does not encrypt locally saved notes.</li>
+ </ul>
+</section>
+<footer>Tatkal Helper is an independent utility and is not affiliated with or endorsed by Indian Railways or IRCTC.</footer>
+</main>
+<script>
+(() => {
+ 'use strict';
+ const $ = id => document.getElementById(id);
+ const STORAGE_KEY = 'tatkal-helper-v2';
+ const checklistItems = [
+  ['IRCTC account ready','Confirm you can sign in before booking time.'],
+  ['Passenger information checked','Verify names and required details carefully.'],
+  ['Registered phone available','Keep the relevant phone charged and within reach.'],
+  ['Payment option ready','Check that your preferred payment method is available.'],
+  ['Main train and class selected','Keep the correct train number, route and class handy.'],
+  ['Backup option noted','Decide on an alternative train or class.'],
+  ['Internet connection checked','Use a stable connection and keep a backup option if possible.']
+ ];
+ let state = {classHour:10, journey:'', train:'', backup:'', passengers:'', checks:[]};
+ let alertsOn = false, audioContext = null, lastRemaining = null, fired = new Set();
+ let timerId = null;
+
+ function load(){
+  try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); if(saved && typeof saved === 'object') state = {...state,...saved}; } catch(e) {}
+  state.checks = Array.isArray(state.checks) ? state.checks : [];
+ }
+ function save(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); $('saveStatus').textContent='Saved on this browser.'; }
+  catch(e){ $('saveStatus').textContent='Could not save in this browser. Check storage settings.'; }
+ }
+ function pad(n){ return String(n).padStart(2,'0'); }
+ function getTarget(now = Date.now()){
+  const parts = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+  const p = Object.fromEntries(parts.map(x=>[x.type,x.value]));
+  const today = `${p.year}-${p.month}-${p.day}`;
+  const [y,m,d] = today.split('-').map(Number);
+  let target = Date.UTC(y,m-1,d,state.classHour,0,0) - 330*60*1000;
+  if(target <= now) target += 86400000;
+  return target;
+ }
+ function formatIST(timestamp){
+  return new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',weekday:'short',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}).format(timestamp) + ' IST';
+ }
+ function beep(count=2){
+  try {
+   audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+   if(audioContext.state === 'suspended') audioContext.resume();
+   for(let i=0;i<count;i++){
+    const osc=audioContext.createOscillator(), gain=audioContext.createGain();
+    osc.connect(gain);gain.connect(audioContext.destination);osc.frequency.value=880;
+    gain.gain.setValueAtTime(.001,audioContext.currentTime+i*.32);
+    gain.gain.exponentialRampToValueAtTime(.14,audioContext.currentTime+i*.32+.02);
+    gain.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+i*.32+.2);
+    osc.start(audioContext.currentTime+i*.32);osc.stop(audioContext.currentTime+i*.32+.22);
+   }
+  } catch(e) {}
+ }
+ function notify(message){
+  $('alertStatus').textContent=message;
+  beep(3);
+  try { if(navigator.vibrate) navigator.vibrate([180,100,180]); } catch(e) {}
+  try { if('Notification' in window && Notification.permission==='granted') new Notification('Tatkal Helper',{body:message}); } catch(e) {}
+ }
+ const milestones = [
+  {seconds:600,key:'600',message:'10 minutes remaining. Review your train and passenger details.'},
+  {seconds:300,key:'300',message:'5 minutes remaining. Get ready on IRCTC.'},
+  {seconds:60,key:'60',message:'1 minute remaining. Keep your phone available if an OTP is requested.'},
+  {seconds:0,key:'0',message:'The selected Tatkal opening time has arrived. Continue on the official IRCTC website/app.'}
+ ];
+ function processAlerts(remaining){
+  if(!alertsOn){lastRemaining=remaining;return;}
+  if(lastRemaining===null){lastRemaining=remaining;return;}
+  // Detect crossed thresholds even if the browser temporarily suspended this tab.
+  if(remaining > lastRemaining){
+   // The target rolled to the next day; reset this day's alert milestones.
+   fired.clear();
+  } else {
+   for(const m of milestones){
+    if(lastRemaining > m.seconds*1000 && remaining <= m.seconds*1000 && !fired.has(m.key)){
+     fired.add(m.key); notify(m.message);
+    }
+   }
+  }
+  lastRemaining=remaining;
+ }
+ function tick(){
+  const now=Date.now(), target=getTarget(now), remaining=Math.max(0,target-now);
+  const total=Math.floor(remaining/1000);
+  $('clock').textContent=`${pad(Math.floor(total/3600))}:${pad(Math.floor(total%3600/60))}:${pad(total%60)}`;
+  $('when').textContent='Next opening: '+formatIST(target)+' · '+(state.classHour===10?'AC':'Non-AC');
+  processAlerts(remaining);
+ }
+ function setClass(hour){
+  state.classHour=hour;lastRemaining=null;fired.clear();
+  $('ac').setAttribute('aria-pressed',String(hour===10));$('nonac').setAttribute('aria-pressed',String(hour===11));
+  save();tick();
+ }
+ function renderChecklist(){
+  const root=$('checklist');root.replaceChildren();
+  checklistItems.forEach((item,index)=>{
+   const label=document.createElement('label');label.className='check';
+   const input=document.createElement('input');input.type='checkbox';input.checked=!!state.checks[index];
+   const content=document.createElement('span');const title=document.createElement('b');title.textContent=item[0];
+   const detail=document.createElement('small');detail.textContent=item[1];content.append(title,detail);
+   input.addEventListener('change',()=>{state.checks[index]=input.checked;save();updateProgress();});
+   label.append(input,content);root.append(label);
+  });
+  updateProgress();
+ }
+ function updateProgress(){
+  const done=checklistItems.reduce((n,_,i)=>n+(state.checks[i]?1:0),0);
+  $('progressText').textContent=`${done} of ${checklistItems.length} completed · ${Math.round(done/checklistItems.length*100)}% ready`;
+  $('progressBar').style.width=(done/checklistItems.length*100)+'%';
+ }
+ function updateJourneyDate(){
+  if(!state.journey){$('bookingDate').textContent='Choose a journey date to see the suggested booking date. Confirm the applicable date and rules on IRCTC.';return;}
+  const [y,m,d]=state.journey.split('-').map(Number);
+  const date=new Date(Date.UTC(y,m-1,d-1));
+  const suggested=new Intl.DateTimeFormat('en-IN',{timeZone:'UTC',weekday:'short',day:'2-digit',month:'short',year:'numeric'}).format(date);
+  $('bookingDate').textContent=`Suggested Tatkal booking date (one day before journey): ${suggested}. Verify the applicable date for your train on IRCTC.`;
+ }
+ function bindText(id,key){
+  $(id).value=state[key]||'';
+  $(id).addEventListener('input',()=>{state[key]=$(id).value;save();});
+ }
+ $('ac').addEventListener('click',()=>setClass(10));
+ $('nonac').addEventListener('click',()=>setClass(11));
+ $('journey').value=state.journey||'';
+ $('journey').addEventListener('change',()=>{state.journey=$('journey').value;save();updateJourneyDate();});
+ bindText('train','train');bindText('backup','backup');bindText('passengers','passengers');
+ $('alertBtn').addEventListener('click',async()=>{
+  alertsOn=!alertsOn;$('alertBtn').setAttribute('aria-pressed',String(alertsOn));
+  $('alertBtn').textContent=alertsOn?'Turn alerts off':'Turn alerts on';
+  if(alertsOn){
+   beep(1);lastRemaining=null;fired.clear();
+   if('Notification' in window && Notification.permission==='default'){
+    try{await Notification.requestPermission();}catch(e){}
+   }
+   $('alertStatus').textContent='Alerts enabled. Keep this page open and prevent your device from sleeping; delivery is not guaranteed.';
+  } else {$('alertStatus').textContent='Alerts are off.';}
+ });
+ $('testBtn').addEventListener('click',()=>{beep(2);try{if(navigator.vibrate)navigator.vibrate([150,80,150]);}catch(e){}$('alertStatus').textContent='Test sound triggered. Check your device volume.';});
+ $('copyBtn').addEventListener('click',async()=>{
+  const text=$('passengers').value;
+  try{await navigator.clipboard.writeText(text);$('saveStatus').textContent='Notes copied.';}
+  catch(e){$('passengers').focus();$('passengers').select();$('saveStatus').textContent='Select the text and copy it manually.';}
+ });
+ $('exportBtn').addEventListener('click',()=>{
+  const exportData={...state,exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='tatkal-helper-plan.json';a.click();URL.revokeObjectURL(url);
+ });
+ $('clearBtn').addEventListener('click',()=>{
+  if(!confirm('Clear the saved journey plan, passenger notes and checklist from this browser?'))return;
+  localStorage.removeItem(STORAGE_KEY);state={classHour:state.classHour,journey:'',train:'',backup:'',passengers:'',checks:[]};
+  $('journey').value='';$('train').value='';$('backup').value='';$('passengers').value='';
+  renderChecklist();updateJourneyDate();$('saveStatus').textContent='Saved data cleared.';
+ });
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden){lastRemaining=null;tick();}});
+ window.addEventListener('pageshow',()=>{lastRemaining=null;tick();});
+ load();
+ setClass(state.classHour===11?11:10);
+ $('journey').value=state.journey||'';updateJourneyDate();
+ renderChecklist();
+ tick();
+ timerId=window.setInterval(tick,1000);
+
+ // PWA installation support. The browser decides when installation is available.
+ let deferredInstallPrompt = null;
+ const installButton = document.getElementById('installBtn');
+ window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  installButton.hidden = false;
+ });
+ installButton.addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+ });
+ window.addEventListener('appinstalled', () => {
+  installButton.hidden = true;
+  $('alertStatus').textContent = 'Tatkal Helper was installed on this device.';
+ });
+ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+   navigator.serviceWorker.register('./sw.js').catch(() => {
+    $('saveStatus').textContent = 'Offline support could not be enabled. Check that the app is hosted over HTTPS.';
+   });
+  });
+ }
+
+})();
+</script>
+</body>
+</html>
